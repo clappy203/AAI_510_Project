@@ -8,8 +8,11 @@ This project aims to predict whether a diabetic patient will be readmitted to th
 
     ├── diabetic_data.csv # Dataset from UCI ML Repository
 
-    ├── final_clean_code+with_MLP.ipynb # Jupyter notebook
-    containing data prep, modeling, and evaluation
+    ├── final_clean_code_with_MLP.ipynb # Jupyter notebook       (data prep, modeling, evaluation)
+
+    ├── xgb_model.pkl # Trained XGBoost model (for deployment)
+
+    ├── main.py # FastAPI app to serve the model
 
     ├── requirements.txt # Python dependencies
 
@@ -17,59 +20,162 @@ This project aims to predict whether a diabetic patient will be readmitted to th
 
 ---
 
-### 📄 File Descriptions
+## 📄 File Descriptions
 
 - **`diabetic_data.csv`** – Dataset from the UCI Machine Learning Repository.
 - **`final_clean_code_with_MLP.ipynb`** – Jupyter notebook containing data preparation, feature engineering, modeling, and evaluation.
-- **`requirements.txt`** – Python dependencies required to run the notebook.
+- **`xgb_model.pkl`** – Serialized XGBoost model trained to predict 30-day readmissions.
+- **`main.py`** – FastAPI app that loads the model and exposes a prediction API.
+- **`requirements.txt`** – Python packages needed to run the notebook and the API.
 - **`README.md`** – Project documentation and usage instructions.
 
-## 📊 Dataset
+---
 
-- **Source**: [UCI Machine Learning Repository - Diabetes 130-US hospitals](https://archive.ics.uci.edu/ml/datasets/diabetes+130-us+hospitals+for+years+1999-2008)
-- **Filename**: `diabetic_data.csv`
-- **License**: MIT License
-- **Size**: 10 years of clinical data (1999–2008) from 130 US hospitals.
-- **Features**: 50+ including demographics, diagnoses, lab results, hospital visits, and medications.
+## 📊 Dataset Overview
 
-**Filtering Criteria:**
+- **Source**: [UCI ML Repository](https://archive.ics.uci.edu/ml/datasets/diabetes+130-us+hospitals+for+years+1999-2008)
+- **Duration**: 10 years (1999–2008) from 130 US hospitals
+- **Features**: 50+ features (demographics, diagnoses, medications, labs, etc.)
 
-- Inpatient encounters only
-- Diabetic diagnoses present
-- Hospital stay: 1–14 days
+**Filtering Criteria**:
+
+- Inpatient encounters
+- Confirmed diabetic diagnosis
+- Hospital stay between 1–14 days
 - Lab tests and medications administered
 
 ---
 
 ## 🧠 Modeling Summary
 
-- Addressed class imbalance (`<30` readmission) using clustering and threshold tuning.
+- **Challenge**: Class imbalance – `<30 days` readmissions are underrepresented
 - **Feature Engineering**:
-  - Created `polypharmacy_score` by aggregating 23 medication features.
-  - Applied one-hot encoding and feature scaling.
-  - Used KMeans clustering to generate `risk_cluster` feature.
-- **Models Used**:
-  - Logistic Regression (baseline)
+
+  - `polypharmacy_score`: Aggregated 23 medication features
+  - `risk_cluster`: Patient risk categories using KMeans clustering
+  - Scaled numerical and one-hot encoded categorical variables
+
+- **Models Compared**:
+
+  - Logistic Regression
   - Random Forest
   - XGBoost (with threshold tuning)
-  - MLP Classifier (Neural Net)
-- **Best Performers**: XGBoost (tuned) and MLP due to better recall on `<30` cases.
+  - MLP Classifier
+
+- **Best Models**:
+  - **XGBoost (threshold-tuned)** and **MLP** achieved higher recall for early readmissions, making them suitable for clinical risk alerts.
 
 ---
 
-## ⚙️ Installation & Setup
+## 🚀 Model Deployment with FastAPI
 
-1. **Clone the repository**
+We use **FastAPI** to deploy the trained XGBoost model for prediction.
+
+### 📂 Deployment Files
+
+- `xgb_model.pkl` — Trained model file
+- `main.py` — FastAPI app exposing a `/predict` endpoint
+
+### ⚙️ Setup Instructions
+
+1. **Install required packages**:
 
 ```bash
-
-git clone <https://github.com/clappy203/AAI_510_Project.git>
-cd AAI_510_Project # if not in the repo yet
-
+pip install fastapi uvicorn scikit-learn xgboost numpy joblib
 ```
+
+2. **Run the API locally:**
+
+```bash
+uvicorn main:app --reload
+```
+
+3. **Access the Swagger UI:**
+
+```bash
+http://127.0.0.1:8000/docs
+```
+
+This interactive UI allows you to test predictions easily.
+
+## 📤 Sample Input (Swagger)
+
+```json
+{
+  "feature_vector": [0.85, 1.2, 0.0, 3.4, 2.1, ...]  // Replace with actual preprocessed feature values
+}
+```
+
+## 📥 Sample Output
+
+```json
+{
+  "prediction": 1,
+  "label": "Readmission within 30 days (high risk)",
+  "probability": {
+    "No readmission (<30 days)": 0.12,
+    "Readmission (<30 days)": 0.88
+  }
+}
+```
+
+📝 **NOTE:** You can refer to the test_features.csv file and copy a row (as a list of values) to use as input on the Swagger UI. Make sure the values are in the same order as used during model training.
+
+## 🧪 How to Use Swagger UI for Prediction
+
+1. Open your browser and go to:
+   http://127.0.0.1:8000/docs
+
+2. Find the POST /predict endpoint.
+
+3. Click the dropdown arrow to expand it, then click "Try it out".
+
+4. In the request body field, you'll see:
+
+```json
+{
+  "feature_vector": [0]
+}
+```
+
+5.  Replace the 0 with a full list of feature values.
+
+    📝 NOTE: Open the test_features.csv file and copy a row as a comma-separated list to paste here.
+
+    **Example:**
+
+```json
+{
+  "feature_vector": [0.85, 1.67, 2.0, 0.0, 3.41, ...]
+}
+```
+
+6. Click "Execute".
+
+7. Check the Server response section for:
+
+   - **prediction:** 0 or 1
+   - **label:** Human-readable outcome (e.g., "Readmission within 30 days (high risk)")
+   - **probability:** Confidence levels for both classes
+
+🔍 **Interpretation:**
+
+- "`1` = Readmission within 30 days (high risk)"
+
+- "`0` = Readmission after 30 days (lower risk)"
 
 ## 🗂️ Project Kanban Board
 
 We use a GitHub Project board to manage tasks and progress across different stages of the project lifecycle (To Do, In Progress, Done).
 
 🔗 [View Kanban Board](https://github.com/users/clappy203/projects/3)
+
+## 📌 Future Work
+
+- Add SHAP explainability to deployed API
+
+- Automate retraining using new EHR data
+
+- Integrate model into clinical decision support tools
+
+- Explore risk stratification across patient subgroups
