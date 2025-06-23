@@ -72,4 +72,4 @@ cd AAI_510_Project # if not in the repo yet
 
 We use a GitHub Project board to manage tasks and progress across different stages of the project lifecycle (To Do, In Progress, Done).
 
-🔗 [View Kanban Board](hhttps://github.com/users/clappy203/projects/3)
+🔗 [View Kanban Board](https://github.com/users/clappy203/projects/3)
